@@ -59,6 +59,19 @@ app.delete('/api/persons/:id', (request, response) => {
 
 app.post('/api/persons', (request, response) => {
   const person = request.body;
+
+  if (!person.name || !person.number) {
+    return response.status(404).send({ error: 'name and number can not be empty' });
+  }
+
+  if (persons.find(p => p.name === person.name)) {
+    return response.status(404).send({ error: 'this name has already been saved' });
+  }
+
+  if (persons.find(p => p.number === person.number)) {
+    return response.status(404).send({ error: 'this number has already been saved' });
+  }
+
   person.id = Math.floor(Math.random() * 10000000);
   persons = persons.concat(person);
 
