@@ -6,6 +6,12 @@ app.use(express.json());
 
 app.use(morgan('tiny'));
 
+morgan.token('method', (req, res) => {
+  if (req.method === "POST") {
+    return JSON.stringify(req.body)
+  }
+})
+
 let persons = [
   {
     "id": 1,
