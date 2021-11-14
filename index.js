@@ -3,6 +3,8 @@ const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
 
+app.use(express.static('build'));
+
 app.use(express.json());
 
 app.use(morgan('tiny'));
