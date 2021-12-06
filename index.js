@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+
 const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
@@ -10,13 +11,13 @@ const errorHandler = (error, request, response, next) => {
   console.error(error.message);
 
   if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
-  } else if (error.name === 'ValidationError') {
-    return response.status(400).json({ error: error.message })
+    return response.status(400).send({ error: 'malformatted id' });
+  } if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message });
   }
 
   next(error);
-}
+};
 
 app.use(express.static('build'));
 
@@ -29,30 +30,30 @@ app.use(cors());
 app.use(errorHandler);
 
 morgan.token('method', (req, res) => {
-  if (req.method === "POST") {
-    return JSON.stringify(req.body)
+  if (req.method === 'POST') {
+    return JSON.stringify(req.body);
   }
-})
+});
 
-app.get('/', (request, response) =>{
-  response.end('<h1>Hello World 1</h1>')
-})
+app.get('/', (request, response) => {
+  response.end('<h1>Hello World 1</h1>');
+});
 
 app.get('/api/persons', (request, response) => {
-  Phone.find({}).then(phones => {
-    response.json(phones)
-  })
+  Phone.find({}).then((phones) => {
+    response.json(phones);
+  });
 });
 
 app.get('/api/persons/:id', (request, response, next) => {
-  Phone.findById(request.params.id).then(phone => {
+  Phone.findById(request.params.id).then((phone) => {
     if (phone) {
       response.json(phone);
     } else {
-      response.status(404).end()
+      response.status(404).end();
     }
   })
-  .catch(error => next(error))
+    .catch((error) => next(error));
 });
 
 app.get('/info', (request, response) => {
@@ -62,42 +63,42 @@ app.get('/info', (request, response) => {
 
 app.delete('/api/persons/:id', (request, response) => {
   Phone.findByIdAndDelete(request.params.id)
-    .then(result => {
+    .then((result) => {
       response.status(204).end();
     })
-    .catch(error => next(error));
+    .catch((error) => next(error));
 });
 
 app.post('/api/persons', (request, response, next) => {
   const person = request.body;
 
-  Phone.find({name: person.name}).then(result => {
+  Phone.find({ name: person.name }).then((result) => {
     if (result) {
       response.status(200).send(result);
     } else {
       const phone = new Phone({
         name: person.name,
-        number: person.number
-      })
+        number: person.number,
+      });
 
-      phone.save().then(savedPhone => {
-        response.json(savedPhone)
+      phone.save().then((savedPhone) => {
+        response.json(savedPhone);
       })
-      .catch(error => next(error))
+        .catch((error) => next(error));
     }
-  })
+  });
 });
 
 app.put('/api/persons/:id', (request, response) => {
-  const newNumber = request.body.number
-  Phone.findByIdAndUpdate(request.params.id, {number: newNumber}, (error, result) => {
+  const newNumber = request.body.number;
+  Phone.findByIdAndUpdate(request.params.id, { number: newNumber }, (error, result) => {
     if (error) {
-      response.status(404).send({ error: error.message} )
+      response.status(404).send({ error: error.message });
     } else {
-      response.send(result)
+      response.send(result);
     }
-  })
-})
+  });
+});
 
 const PORT = process.env.PORT || 3001;
 
