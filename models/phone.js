@@ -11,8 +11,16 @@ mongoose.connect(url)
   });
 
 const phoneSchema = new mongoose.Schema({
-  name: String,
-  number: String
+  name: {
+    type: String,
+    minLength: 1,
+    required: true
+  } ,
+  number: {
+    type: String,
+    minLength: 8,
+    required: true
+  }
 });
 
 phoneSchema.set('toJSON', {
