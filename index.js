@@ -1,7 +1,20 @@
+require('dotenv').config();
+
 const express = require('express');
 const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
+const Phone = require('./models/phone');
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  }
+
+  next(error);
+}
 
 app.use(express.static('build'));
 
@@ -11,52 +24,33 @@ app.use(morgan('tiny'));
 
 app.use(cors());
 
+app.use(errorHandler);
+
 morgan.token('method', (req, res) => {
   if (req.method === "POST") {
     return JSON.stringify(req.body)
   }
 })
 
-let persons = [
-  {
-    "id": 1,
-    "name": "Arto Hellas",
-    "number": "040-123456"
-  },
-  {
-    "id": 2,
-    "name": "Ada Lovelace",
-    "number": "39-44-5323523"
-  },
-  {
-    "id": 3,
-    "name": "Dan Abramov",
-    "number": "12-43-234345"
-  },
-  {
-    "id": 4,
-    "name": "Mary Poppendieck",
-    "number": "39-23-6423122"
-  }
-]
-
 app.get('/', (request, response) =>{
   response.end('<h1>Hello World 1</h1>')
 })
 
 app.get('/api/persons', (request, response) => {
-  if (!!persons.length) {
-    return response.json(persons)
-  }
+  Phone.find({}).then(phones => {
+    response.json(phones)
+  })
 });
 
-app.get('/api/persons/:id', (request, response) => {
-  const chosenId = persons.find(person => String(person.id) === request.params.id);
-  if (!chosenId) {
-    return response.status(404).end();
-  }
-
-  response.json(chosenId);
+app.get('/api/persons/:id', (request, response, next) => {
+  Phone.findById(request.params.id).then(phone => {
+    if (phone) {
+      response.json(phone);
+    } else {
+      response.status(404).end()
+    }
+  })
+  .catch(error => next(error))
 });
 
 app.get('/info', (request, response) => {
@@ -65,31 +59,53 @@ app.get('/info', (request, response) => {
 });
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter(person => person.id !== id);
-
-  response.status(200).end(JSON.stringify(persons));
+  Phone.findByIdAndDelete(request.params.id)
+    .then(result => {
+      response.status(204).end();
+    })
+    .catch(error => next(error));
 });
 
 app.post('/api/persons', (request, response) => {
   const person = request.body;
 
-  if (!person.name || !person.number) {
-    return response.status(404).send({ error: 'name and number can not be empty' });
-  }
+  Phone.find({name: person.name}).then(result => {
+    if (result) {
+      response.status(200).send(result);
+    } else {
+      const phone = new Phone({
+        name: person.name,
+        number: person.number
+      })
 
-  if (persons.find(p => p.name === person.name)) {
-    return response.status(404).send({ error: 'this name has already been saved' });
-  }
+      phone.save().then(savedPhone => {
+        response.json(savedPhone)
+      })
+    }
+  })
 
-  if (persons.find(p => p.number === person.number)) {
-    return response.status(404).send({ error: 'this number has already been saved' });
-  }
+  // if (!person.name || !person.number) {
+  //   return response.status(404).send({ error: 'name and number can not be empty' });
+  // }
 
-  person.id = Math.floor(Math.random() * 10000000);
-  persons = persons.concat(person);
+  // if (persons.find(p => p.name === person.name)) {
+  //   return response.status(404).send({ error: 'this name has already been saved' });
+  // }
 
-  response.json(persons);
+  // if (persons.find(p => p.number === person.number)) {
+  //   return response.status(404).send({ error: 'this number has already been saved' });
+  // }
+});
+
+app.put('/api/persons/:id', (request, response) => {
+  const newNumber = request.body.number
+  Phone.findByIdAndUpdate(request.params.id, {number: newNumber}, (error, result) => {
+    if (error) {
+      response.status(404).send({ error: error.message} )
+    } else {
+      response.send(result)
+    }
+  })
 })
 
 const PORT = process.env.PORT || 3001;
