@@ -11,6 +11,8 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
   }
 
   next(error);
@@ -66,7 +68,7 @@ app.delete('/api/persons/:id', (request, response) => {
     .catch(error => next(error));
 });
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const person = request.body;
 
   Phone.find({name: person.name}).then(result => {
@@ -81,20 +83,9 @@ app.post('/api/persons', (request, response) => {
       phone.save().then(savedPhone => {
         response.json(savedPhone)
       })
+      .catch(error => next(error))
     }
   })
-
-  // if (!person.name || !person.number) {
-  //   return response.status(404).send({ error: 'name and number can not be empty' });
-  // }
-
-  // if (persons.find(p => p.name === person.name)) {
-  //   return response.status(404).send({ error: 'this name has already been saved' });
-  // }
-
-  // if (persons.find(p => p.number === person.number)) {
-  //   return response.status(404).send({ error: 'this number has already been saved' });
-  // }
 });
 
 app.put('/api/persons/:id', (request, response) => {
